@@ -275,7 +275,7 @@ fn main() {
 						match re.captures(command::unescape(&message).as_slice()) {
 							Some(i) => {
 								let i = i.at(1);
-								let encoded = url::encode(i);
+								let encoded = url::encode_component(i);
 
 								let url = format!("http://ajax.googleapis.com/ajax/services/search/images?safe=off&v=1.0&q={}", encoded);
 
@@ -295,6 +295,8 @@ fn main() {
 													let responseURL = "[URL]".to_string() + *resultURL + "[/URL]";
 
 													copy_our_tx.send(SendChatMessage(channelid, responseURL));
+
+													return;
 												}
 											},
 											Err(_) => {}
@@ -305,6 +307,8 @@ fn main() {
 							},
 							_ => {}
 						}
+						
+						copy_our_tx.send(SendChatMessage(channelid, "No result!".to_string()));
 					});
 				}
 			}
