@@ -214,7 +214,7 @@ fn main() {
 				// check for new channels
 				for (channelid, _) in map.iter() {
 					let channelid = *channelid;
-					if channelid == 77 {
+					//if channelid == 77 {
 						let no_contains = {
 							let mut ccl = currentChannelList.lock();
 							!ccl.contains_key(&channelid)
@@ -260,7 +260,7 @@ fn main() {
 							let mut ccl = currentChannelList.lock();
 							ccl.insert(channelid, (w_our_tx));
 						}
-					}
+					//}
 				}
 			},
 			ChatMessage(channelid, invokerid, invokeruid, message) => {
