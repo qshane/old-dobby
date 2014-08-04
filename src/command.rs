@@ -2,7 +2,6 @@
 extern crate peg_syntax_ext;
 
 use std::fmt::{Show, Formatter, FormatError};
-use std::iter::Map;
 use std::slice::Items;
 
 peg! response(r#"
@@ -94,10 +93,6 @@ pub fn escape(start: &String) -> String {
 	start.replace(" ", "\\s").replace("|", "\\p")
 }
 
-pub fn format(cmd: Atom) -> String {
-	return format!("{}", cmd);
-}
-
 impl Atom {
 	pub fn iter_pipe(&self) -> Items<Box<Atom>> {
 		match *self {
@@ -123,7 +118,7 @@ impl Atom {
 
 	pub fn iter_cmd(&self) -> Items<Atom> {
 		match *self {
-			Command(ref name, ref args) => {
+			Command(_, ref args) => {
 				return args.iter_args()
 			},
 			_ => {

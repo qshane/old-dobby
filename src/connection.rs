@@ -79,7 +79,7 @@ impl<'a> TS3Connection<'a> {
 				Ok(line) => {
 					received += 1;
 					//println!("GOT LINE: {}", line);
-					if (received > 2) {
+					if received > 2 {
 						match command::parse(&line) {
 							Ok(parsed) => {
 								match parsed {
@@ -158,7 +158,7 @@ impl<'a> TS3Connection<'a> {
 	pub fn close(&self) {
 		let mut socket = self.get_socket();
 
-		socket.close_read();
-		socket.close_write();
+		let _ = socket.close_read();
+		let _ = socket.close_write();
 	}
 }
