@@ -446,7 +446,7 @@ fn main() {
 				// check for new channels
 				for (channelid, _) in map.iter() {
 					let channelid = *channelid;
-					if channelid == 77 {
+					if channelid == 77 || channelid == 75 {
 						let no_contains = {
 							let mut ccl = currentChannelList.lock();
 							!ccl.contains_key(&channelid)
