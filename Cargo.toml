@@ -1,0 +1,7 @@
+[package]
+name = "dobby"
+version = "0.1.0"
+authors = [ "csgomakesmemad@gmail.com" ]
+
+[dependencies.peg]
+path = "rust-peg"
