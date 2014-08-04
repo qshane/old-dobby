@@ -90,7 +90,7 @@ pub fn parse(msg: &String) -> Result<Atom, String> {
 	response::atom(msg.as_slice())
 }
 
-fn escape(start: &String) -> String {
+pub fn escape(start: &String) -> String {
 	start.replace(" ", "\\s").replace("|", "\\p")
 }
 

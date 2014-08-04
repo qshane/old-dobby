@@ -181,7 +181,7 @@ impl Bot {
 		let (tx, rx) = channel();
 
 		self.send(format!("clientmove clid={} cid={}", clid, cid), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
-			if res.is_ok() {
+			if res.is_ok() || (res.err().unwrap() == 770) {
 				result(Ok(()));
 
 				tx.send(true);
@@ -213,6 +213,16 @@ impl Bot {
 		tx.send(false);
 
 		rx.recv()
+	}
+
+	fn send_chat_message(&self, msg: String) {
+		self.send(format!("sendtextmessage targetmode=2 target=1 msg={}", command::escape(&msg)), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
+			if res.is_ok() {
+				result(Ok(()));
+			} else {
+				result(Err(format!("Couldn't send message to channel: {}", msg)));
+			}
+		})
 	}
 
 	fn channel_list(&self) -> HashMap<uint,bool> {
@@ -253,6 +263,7 @@ enum ChildDispatch {
 }
 
 enum ParentDispatch {
+	SendChatMessage(uint, String),
 	GetChannelList,
 	Die
 }
@@ -351,23 +362,34 @@ fn supervisor(parent: &Sender<ChildDispatch>, local: &Receiver<ParentDispatch>, 
 		error.send(err.recv());
 	});
 
+	let mut local_client_id = 0u;
+
 	match supervisor.login() {
 		Ok(client_id) => {
-			loop {
-				let task = local.recv();
+			local_client_id = client_id;
 
-				match task {
-					GetChannelList => {
-						parent.send(ChannelList(supervisor.channel_list()));
-					},
-					Die => {
-						break;
-					}
-				}
-			}
+			supervisor.change_name("Dobby".to_string());
 		},
 		Err(_) => {
 			
+		}
+	}
+
+	loop {
+		let task = local.recv();
+
+		match task {
+			SendChatMessage(channel, msg) => {
+				if supervisor.move_to_channel(local_client_id, channel) {
+					supervisor.send_chat_message(msg);
+				}
+			},
+			GetChannelList => {
+				parent.send(ChannelList(supervisor.channel_list()));
+			},
+			Die => {
+				break;
+			}
 		}
 	}
 }
@@ -407,10 +429,11 @@ fn main() {
 		}
 	});
 
+	let another_our_tx = our_tx.clone();
 	spawn(proc() {
 		loop {
 			timer::sleep(5000);
-			our_tx.send(GetChannelList);
+			another_our_tx.send(GetChannelList);
 		}
 	});
 
@@ -473,7 +496,10 @@ fn main() {
 				}
 			},
 			ChatMessage(channelid, invokerid, invokeruid, message) => {
-				println!("Received chat message on channel {} from {}: {}", channelid, invokerid, message);
+				if (invokeruid.as_slice() != "serveradmin") {
+					println!("Received chat message on channel {} from {}: {}", channelid, invokerid, message);
+					our_tx.send(SendChatMessage(channelid, "You suck!".to_string()));
+				}
 			}
 		}
 	}
