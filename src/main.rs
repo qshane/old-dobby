@@ -4,6 +4,17 @@
 
 #![feature(phase)]
 
+extern crate http;
+extern crate serialize;
+extern crate regex;
+extern crate url;
+#[phase(plugin)] extern crate regex_macros;
+
+use http::client::RequestWriter;
+use http::method::Get;
+use http::headers::HeaderEnum;
+use serialize::json;
+
 use std::rand::{task_rng,Rng};
 use std::sync::{Arc,Mutex};
 use std::io::timer;
@@ -255,9 +266,58 @@ fn main() {
 			ChatMessage(channelid, invokerid, invokeruid, message) => {
 				if (invokeruid.as_slice() != "serveradmin") {
 					println!("Received chat message on channel {} from {}: {}", channelid, invokerid, message);
-					our_tx.send(SendChatMessage(channelid, "You suck!".to_string()));
+
+					let re = regex!(r"^.img (.+)$");
+
+					let copy_our_tx = our_tx.clone();
+
+					spawn(proc() {
+						match re.captures(command::unescape(&message).as_slice()) {
+							Some(i) => {
+								let i = i.at(1);
+								let encoded = url::encode(i);
+
+								let url = format!("http://ajax.googleapis.com/ajax/services/search/images?safe=off&v=1.0&q={}", encoded);
+
+								let request: RequestWriter = RequestWriter::new(Get, from_str(url.as_slice()).unwrap()).unwrap();
+
+								match request.read_response() {
+									Ok(mut response) => {
+										let body = String::from_utf8(response.read_to_end().unwrap()).unwrap();
+
+										match json::decode::<GoogleImageResult>(body.as_slice()) {
+											Ok(ref res) => {
+												if res.responseData.results.len() > 0 {
+													let ref first = res.responseData.results[0];
+
+													let resultURL = first.find(&"url".to_string()).unwrap();
+
+													let responseURL = "[URL]".to_string() + *resultURL + "[/URL]";
+
+													copy_our_tx.send(SendChatMessage(channelid, responseURL));
+												}
+											},
+											Err(_) => {}
+										}
+									},
+									Err(_) => {}
+								}
+							},
+							_ => {}
+						}
+					});
 				}
 			}
 		}
 	}
+}
+
+#[deriving(Decodable,Show)]
+struct GoogleImageResult {
+	responseData: GoogleImageResponses
+}
+
+#[deriving(Decodable,Show)]
+struct GoogleImageResponses {
+	results: Vec<HashMap<String, String>>
 }

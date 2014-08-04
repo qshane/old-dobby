@@ -5,3 +5,6 @@ authors = [ "csgomakesmemad@gmail.com" ]
 
 [dependencies.peg]
 path = "rust-peg"
+
+[dependencies.http]
+git = "https://github.com/chris-morgan/rust-http.git"

@@ -93,6 +93,10 @@ pub fn escape(start: &String) -> String {
 	start.replace(" ", "\\s").replace("|", "\\p")
 }
 
+pub fn unescape(start: &String) -> String {
+	start.replace("\\s", " ").replace("\\p", "|")
+}
+
 impl Atom {
 	pub fn iter_pipe(&self) -> Items<Box<Atom>> {
 		match *self {
