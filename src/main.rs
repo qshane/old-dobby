@@ -301,14 +301,14 @@ fn main() {
 											},
 											Err(_) => {}
 										}
+
+										copy_our_tx.send(SendChatMessage(channelid, "No result!".to_string()));
 									},
 									Err(_) => {}
 								}
 							},
 							_ => {}
 						}
-						
-						copy_our_tx.send(SendChatMessage(channelid, "No result!".to_string()));
 					});
 				}
 			}
