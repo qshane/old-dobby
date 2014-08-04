@@ -4,6 +4,7 @@
 
 #![feature(phase)]
 
+extern crate debug;
 extern crate http;
 extern crate serialize;
 extern crate regex;
@@ -267,47 +268,45 @@ fn main() {
 				if (invokeruid.as_slice() != "serveradmin") {
 					println!("Received chat message on channel {} from {}: {}", channelid, invokerid, message);
 
-					let re = regex!(r"^.img (.+)$");
+					let re = regex!(r"^\.img (.+)$");
 
 					let copy_our_tx = our_tx.clone();
 
 					spawn(proc() {
-						match re.captures(command::unescape(&message).as_slice()) {
-							Some(i) => {
-								let i = i.at(1);
-								let encoded = url::encode_component(i);
+						let url = format!("http://shane.quibs.org/tsdo.php?cid={}&invokerid={}&invokeruid={}&msg={}", 
+							url::encode_component(format!("{}", channelid)),
+							url::encode_component(format!("{}", invokerid)),
+							url::encode_component(format!("{}", invokeruid)),
+							url::encode_component(format!("{}", message))
+						);
 
-								let url = format!("http://ajax.googleapis.com/ajax/services/search/images?safe=off&v=1.0&q={}", encoded);
+						let request: RequestWriter = RequestWriter::new(Get, from_str(url.as_slice()).unwrap()).unwrap();
 
-								let request: RequestWriter = RequestWriter::new(Get, from_str(url.as_slice()).unwrap()).unwrap();
+						match request.read_response() {
+							Ok(mut response) => {
+								let body = String::from_utf8(response.read_to_end().unwrap()).unwrap();
 
-								match request.read_response() {
-									Ok(mut response) => {
-										let body = String::from_utf8(response.read_to_end().unwrap()).unwrap();
-
-										match json::decode::<GoogleImageResult>(body.as_slice()) {
-											Ok(ref res) => {
-												if res.responseData.results.len() > 0 {
-													let ref first = res.responseData.results[0];
-
-													let resultURL = first.find(&"url".to_string()).unwrap();
-
-													let responseURL = "[URL]".to_string() + *resultURL + "[/URL]";
-
-													copy_our_tx.send(SendChatMessage(channelid, responseURL));
-
-													return;
+								match json::decode::<OperationList>(body.as_slice()) {
+									Ok(ref res) => {
+										for cmd in res.commands.iter() {
+											match (*cmd.find(&"type".to_string()).unwrap()).as_slice() {
+												"respond" => {
+													copy_our_tx.send(SendChatMessage(channelid, (*cmd.find(&"msg".to_string()).unwrap()).clone()))
+												},
+												_ => {
+													println!("unrecognized type");
 												}
-											},
-											Err(_) => {}
+											}
 										}
-
-										copy_our_tx.send(SendChatMessage(channelid, "No result!".to_string()));
 									},
-									Err(_) => {}
+									Err(_) => {
+										println!("couldn't parse output");
+									}
 								}
 							},
-							_ => {}
+							Err(_) => {
+								println!("couldn't fetch response");
+							}
 						}
 					});
 				}
@@ -317,11 +316,6 @@ fn main() {
 }
 
 #[deriving(Decodable,Show)]
-struct GoogleImageResult {
-	responseData: GoogleImageResponses
-}
-
-#[deriving(Decodable,Show)]
-struct GoogleImageResponses {
-	results: Vec<HashMap<String, String>>
+struct OperationList {
+	commands: Vec<HashMap<String, String>>
 }
