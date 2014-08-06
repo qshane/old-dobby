@@ -21,6 +21,7 @@ use std::sync::{Arc,Mutex};
 use std::io::timer;
 use std::collections::HashMap;
 use bot::Bot;
+use std::os::getenv;
 
 mod connection;
 mod command;
@@ -273,11 +274,12 @@ fn main() {
 					let copy_our_tx = our_tx.clone();
 
 					spawn(proc() {
-						let url = format!("http://shane.quibs.org/tsdo.php?cid={}&invokerid={}&invokeruid={}&msg={}", 
+						let url = format!("http://shane.quibs.org/tsdo.php?pass={}&cid={}&invokerid={}&invokeruid={}&msg={}", 
+							getenv("TS3_PASS").unwrap(),
 							url::encode_component(format!("{}", channelid)),
 							url::encode_component(format!("{}", invokerid)),
-							url::encode_component(format!("{}", invokeruid)),
-							url::encode_component(format!("{}", message))
+							url::encode_component(command::unescape(&invokeruid)),
+							url::encode_component(command::unescape(&message))
 						);
 
 						let request: RequestWriter = RequestWriter::new(Get, from_str(url.as_slice()).unwrap()).unwrap();
