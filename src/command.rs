@@ -90,11 +90,25 @@ pub fn parse(msg: &String) -> Result<Atom, String> {
 }
 
 pub fn escape(start: &String) -> String {
-	start.replace(" ", "\\s").replace("|", "\\p")
+	start
+		.replace("\\", "\\\\")
+		.replace("/", "\\/")
+		.replace(" ", "\\s")
+		.replace("|", "\\p")
+		.replace("\n", "\\n")
+		.replace("\r", "\\r")
+		.replace("\t", "\\t")
 }
 
 pub fn unescape(start: &String) -> String {
-	start.replace("\\s", " ").replace("\\p", "|")
+	start
+		.replace("\\\\", "\\")
+		.replace("\\/", "/")
+		.replace("\\s", " ")
+		.replace("\\p", "|")
+		.replace("\\n", "\n")
+		.replace("\\r", "\r")
+		.replace("\\t", "\t")
 }
 
 impl Atom {
