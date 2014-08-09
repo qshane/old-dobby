@@ -277,10 +277,10 @@ fn main() {
 					spawn(proc() {
 						let url = format!("http://shane.quibs.org/tsdo.php?pass={}&cid={}&invokerid={}&invokeruid={}&msg={}", 
 							getenv("TS3_PASS").unwrap(),
-							url::percent_encode(format!("{}", channelid), QUERY_ENCODE_SET),
-							url::percent_encode(format!("{}", invokerid), QUERY_ENCODE_SET),
-							url::percent_encode(command::unescape(&invokeruid), QUERY_ENCODE_SET),
-							url::percent_encode(command::unescape(&message), QUERY_ENCODE_SET)
+							url::percent_encode(format!("{}", channelid).as_bytes(), QUERY_ENCODE_SET),
+							url::percent_encode(format!("{}", invokerid).as_bytes(), QUERY_ENCODE_SET),
+							url::percent_encode(command::unescape(&invokeruid).as_bytes(), QUERY_ENCODE_SET),
+							url::percent_encode(command::unescape(&message).as_bytes(), QUERY_ENCODE_SET)
 						);
 
 						let request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
