@@ -1,10 +1,11 @@
 [package]
 name = "dobby"
-version = "0.1.0"
-authors = [ "csgomakesmemad@gmail.com" ]
+version = "0.2.0"
+authors = [ "shane@quibs.org" ]
 
 [dependencies.peg]
 path = "rust-peg"
 
 [dependencies.http]
 git = "https://github.com/chris-morgan/rust-http.git"
+

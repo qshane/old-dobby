@@ -22,6 +22,7 @@ use std::io::timer;
 use std::collections::HashMap;
 use bot::Bot;
 use std::os::getenv;
+use url::{Url,QUERY_ENCODE_SET};
 
 mod connection;
 mod command;
@@ -276,13 +277,13 @@ fn main() {
 					spawn(proc() {
 						let url = format!("http://shane.quibs.org/tsdo.php?pass={}&cid={}&invokerid={}&invokeruid={}&msg={}", 
 							getenv("TS3_PASS").unwrap(),
-							url::encode_component(format!("{}", channelid)),
-							url::encode_component(format!("{}", invokerid)),
-							url::encode_component(command::unescape(&invokeruid)),
-							url::encode_component(command::unescape(&message))
+							url::percent_encode(format!("{}", channelid), QUERY_ENCODE_SET),
+							url::percent_encode(format!("{}", invokerid), QUERY_ENCODE_SET),
+							url::percent_encode(command::unescape(&invokeruid), QUERY_ENCODE_SET),
+							url::percent_encode(command::unescape(&message), QUERY_ENCODE_SET)
 						);
 
-						let request: RequestWriter = RequestWriter::new(Get, from_str(url.as_slice()).unwrap()).unwrap();
+						let request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
 
 						match request.read_response() {
 							Ok(mut response) => {
