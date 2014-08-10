@@ -239,6 +239,10 @@ fn main() {
 							);
 
 							let request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
+
+							match request.read_response() {
+								_ => {}
+							}
 						},
 						None => {}
 					}
