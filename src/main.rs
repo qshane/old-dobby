@@ -177,6 +177,8 @@ fn main() {
 	let d_our_tx = our_tx.clone();
 	let c_watcher_tx = supervisor_tx.clone();
 
+	let server_uptime = Arc::new(Mutex::new(0u));
+
 	spawn(proc() {
 		loop {
 			println!("Dobby supervisor is starting");
@@ -220,7 +222,27 @@ fn main() {
 		let event = our_rx.recv();
 		match event {
 			ServerInfo(map) => {
-				println!("received server info {}", map);
+				match map.find(&"virtualserver_uptime".to_string()) {
+					Some(uptime) => {
+						let mut v_uptime = server_uptime.lock();
+						(*v_uptime) = from_str::<uint>(uptime.as_slice()).unwrap();
+					},
+					None => {}
+				};
+
+				spawn(proc() {
+					match map.find(&"virtualserver_hostbanner_gfx_url".to_string()) {
+						Some(imgurl) => {
+							let url = format!("https://quibs.org/ts3_img.php?pass={}&url={}",
+								getenv("TS3_PASS").unwrap(),
+								url::percent_encode(imgurl.as_bytes(), QUERY_ENCODE_SET)
+							);
+
+							let request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
+						},
+						None => {}
+					}
+				});
 			},
 			ChannelList(map) => {
 				// check for new channels
@@ -243,7 +265,7 @@ fn main() {
 							let (etx, erx) = channel();
 
 							spawn(proc() {
-								println!("Watcher encountered error: {}", erx.recv());
+								println!("Watcher {} encountered error: {}", channelid, erx.recv());
 								internal_our_w_tx.send(Die);
 							});
 
@@ -284,7 +306,7 @@ fn main() {
 					let copy_our_tx = our_tx.clone();
 
 					spawn(proc() {
-						let url = format!("http://shane.quibs.org/tsdo.php?pass={}&cid={}&invokerid={}&invokeruid={}&msg={}", 
+						let url = format!("https://quibs.org/ts3_chat.php?pass={}&cid={}&invokerid={}&invokeruid={}&msg={}", 
 							getenv("TS3_PASS").unwrap(),
 							url::percent_encode(format!("{}", channelid).as_bytes(), QUERY_ENCODE_SET),
 							url::percent_encode(format!("{}", invokerid).as_bytes(), QUERY_ENCODE_SET),
