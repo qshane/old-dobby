@@ -30,12 +30,14 @@ mod bot;
 
 enum ChildDispatch {
 	ChannelList(HashMap<uint,bool>),
+	ServerInfo(HashMap<String,String>),
 	ChatMessage(/*channelid: */ uint, /*invokerid: */ uint, /*invokeruid: */ String, /*message: */ String)
 }
 
 enum ParentDispatch {
 	SendChatMessage(uint, String),
 	GetChannelList,
+	GetServerInfo,
 	Die
 }
 
@@ -155,6 +157,9 @@ fn supervisor(parent: &Sender<ChildDispatch>, local: &Receiver<ParentDispatch>, 
 					supervisor.send_chat_message(msg);
 				}
 			},
+			GetServerInfo => {
+				parent.send(ServerInfo(supervisor.server_info()));
+			},
 			GetChannelList => {
 				parent.send(ChannelList(supervisor.channel_list()));
 			},
@@ -205,6 +210,7 @@ fn main() {
 		loop {
 			timer::sleep(5000);
 			another_our_tx.send(GetChannelList);
+			another_our_tx.send(GetServerInfo);
 		}
 	});
 
@@ -213,6 +219,9 @@ fn main() {
 	loop {
 		let event = our_rx.recv();
 		match event {
+			ServerInfo(map) => {
+				println!("received server info {}", map);
+			},
 			ChannelList(map) => {
 				// check for new channels
 				for (channelid, _) in map.iter() {

@@ -216,6 +216,36 @@ impl Bot {
 		})
 	}
 
+	pub fn server_info(&self) -> HashMap<String,String> {
+		let mut ret = HashMap::new();
+
+		self.send("serverinfo".to_string(), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
+			match res {
+				Ok(pipe) => {
+					result(Ok(()));
+
+					for args in pipe.iter_pipe() {
+						for arg in args.iter_args() {
+							match *arg {
+								command::KeyValue(ref key, ref value) => {
+									ret.insert(key.clone(), value.clone());
+								},
+								_ => {
+
+								}
+							}
+						}
+					}
+				},
+				Err(code) => {
+					result(Err(format!("Couldn't get server info (Error code: {})", code)))
+				}
+			}
+		});
+
+		return ret;
+	}
+
 	pub fn channel_list(&self) -> HashMap<uint,bool> {
 		let mut ret = HashMap::new();
 
