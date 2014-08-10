@@ -235,7 +235,7 @@ fn main() {
 						Some(imgurl) => {
 							let url = format!("https://quibs.org/ts3_img.php?pass={}&url={}",
 								getenv("TS3_PASS").unwrap(),
-								url::percent_encode(imgurl.as_bytes(), QUERY_ENCODE_SET)
+								url::percent_encode(command::unescape(imgurl).as_bytes(), QUERY_ENCODE_SET)
 							);
 
 							let request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
