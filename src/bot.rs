@@ -70,12 +70,26 @@ impl Bot {
 					}
 				});
 
+				let t_run_tx = run_tx.clone();
+
 				spawn(proc() {
 					loop {
 						timer::sleep(5000);
 						let lastmsg = timeoutchecker.last_msg();
 						if (lastmsg.sec < (time::get_time().sec - 10)) {
-							println!("I haven't received a message in over 10 seconds!");
+							timeoutchecker.close();
+						} else {
+							// send a ping message of some sort
+							let (my_response_tx,my_response_rx) = channel();
+							t_run_tx.send(
+								("ping".to_string(), my_response_tx)
+							);
+							match my_response_rx.recv_opt() {
+								Ok((result, responder)) => {
+									responder.send(Ok(()));
+								}
+								_ => {}
+							}
 						}
 					}
 				});
