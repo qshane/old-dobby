@@ -1,3 +1,5 @@
+extern crate time;
+
 use command;
 
 use std::io::TcpStream;
@@ -11,7 +13,8 @@ fn dispatch(message: Result<command::Atom, uint>, callback: Sender<(Result<comma
 }
 
 pub struct TS3Connection <'a> {
-	socket: Arc<Mutex<TcpStream>>
+	socket: Arc<Mutex<TcpStream>>,
+	lastmsg: Arc<Mutex<time::Timespec>>
 }
 
 impl<'a> TS3Connection<'a> {
@@ -21,9 +24,16 @@ impl<'a> TS3Connection<'a> {
 				socket: Arc::new(Mutex::new(match TcpStream::connect(host, 10011) {
 					Ok(stream) => stream,
 					Err(e) => {return Err(e)}
-				}))
+				})),
+				lastmsg: Arc::new(Mutex::new(time::get_time()))
 			}
 		));
+	}
+
+	pub fn last_msg(&self) -> time::Timespec {
+		let mut lastmsg = self.lastmsg.lock();
+
+		return (*lastmsg).clone();
 	}
 
 	fn get_line(&self) -> IoResult<String> {
@@ -77,6 +87,11 @@ impl<'a> TS3Connection<'a> {
 		loop {
 			match self.get_line() {
 				Ok(line) => {
+					{
+						// mark last message received
+						let mut lastmsg = self.lastmsg.lock();
+						(*lastmsg) = time::get_time();
+					}
 					received += 1;
 					//println!("GOT LINE: {}", line);
 					if received > 2 {

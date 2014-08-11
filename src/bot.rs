@@ -1,8 +1,12 @@
+extern crate time;
+
 use command;
 use connection::TS3Connection;
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
 use std::os::getenv;
+
+use std::io::timer;
 
 pub struct Bot {
 	error: Sender<Result<(), String>>,
@@ -31,6 +35,7 @@ impl Bot {
 				let (run_tx, run_rx) = channel::<(String, Sender<(Result<command::Atom, uint>, Sender<Result<(), String>>)>)>();
 
 				let writer = connection.clone();
+				let timeoutchecker = connection.clone();
 
 				let error_tx_ret = error_tx.clone();
 
@@ -61,6 +66,16 @@ impl Bot {
 							Err(_) => {
 								break;
 							}
+						}
+					}
+				});
+
+				spawn(proc() {
+					loop {
+						timer::sleep(5000);
+						let lastmsg = timeoutchecker.last_msg();
+						if (lastmsg.sec < (time::get_time().sec - 10)) {
+							println!("I haven't received a message in over 10 seconds!");
 						}
 					}
 				});
