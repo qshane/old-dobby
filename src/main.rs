@@ -9,6 +9,7 @@ extern crate http;
 extern crate serialize;
 extern crate regex;
 extern crate url;
+extern crate sync;
 #[phase(plugin)] extern crate regex_macros;
 
 use http::client::RequestWriter;
@@ -18,6 +19,7 @@ use serialize::json;
 
 use std::rand::{task_rng,Rng};
 use std::sync::{Arc,Mutex};
+
 use std::io::timer;
 use std::collections::HashMap;
 use bot::Bot;
@@ -152,6 +154,7 @@ fn supervisor(parent: &Sender<ChildDispatch>, local: &Receiver<ParentDispatch>, 
 
 	loop {
 		let task = local.recv();
+		let clientlist_lock = Arc::new(sync::mutex::Mutex::new());
 
 		match task {
 			SendChatMessage(channel, msg) => {
@@ -168,16 +171,24 @@ fn supervisor(parent: &Sender<ChildDispatch>, local: &Receiver<ParentDispatch>, 
 			GetClientList => {
 				let tmpbot = supervisor.clone();
 				let tmpparent = parent.clone();
+				let tmplock = clientlist_lock.clone();
 				spawn(proc() {
-					let mut result: Vec<HashMap<String, String>> = Vec::new();
+					match tmplock.try_lock() {
+						Some(mylock) => {
+							let mut result: Vec<HashMap<String, String>> = Vec::new();
 
-					let list = tmpbot.client_list();
+							let list = tmpbot.client_list();
 
-					for clid in list.iter() {
-						result.push(tmpbot.get_client_info(*clid));
-					}
+							for clid in list.iter() {
+								result.push(tmpbot.get_client_info(*clid));
+							}
 
-					tmpparent.send(ClientList(result));
+							tmpparent.send(ClientList(result));
+						},
+						None => {
+
+						}
+					};
 				});
 			},
 			Die => {
