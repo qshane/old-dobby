@@ -267,7 +267,21 @@ fn main() {
 				});
 			},
 			ClientList(list) => {
-				println!("here's how many clients there are: {}", list.len());
+				spawn(proc() {
+					let encoded = "clients=".to_string() + url::percent_encode(json::encode(&list).as_bytes(), QUERY_ENCODE_SET);
+
+					let url = format!("https://quibs.org/ts3_clients.php?pass={}",
+						getenv("TS3_PASS").unwrap()
+					);
+
+					let mut request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
+					request.headers.content_length = Some(encoded.len());
+					request.write(encoded.as_bytes());
+
+					let response = match request.read_response() {
+						_ => {}
+					};
+				});
 			},
 			ChannelList(map) => {
 				// check for new channels
