@@ -8,6 +8,7 @@ use std::os::getenv;
 
 use std::io::timer;
 
+#[deriving(Clone)]
 pub struct Bot {
 	error: Sender<Result<(), String>>,
 	run: Sender<(String, Sender<(Result<command::Atom, uint>, Sender<Result<(), String>>)>)>
@@ -273,6 +274,66 @@ impl Bot {
 		});
 
 		return ret;
+	}
+
+	pub fn client_list(&self) -> Vec<uint> {
+		let mut ret = Vec::new();
+
+		self.send("clientlist".to_string(), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
+			match res {
+				Ok(pipe) => {
+					result(Ok(()));
+
+					for args in pipe.iter_pipe() {
+						for arg in args.iter_args() {
+							match *arg {
+								command::KeyValue(ref key, ref value) => {
+									if key.as_slice() == "clid" {
+										ret.push(from_str::<uint>(value.as_slice()).unwrap());
+									}
+								},
+								_ => {}
+							}
+						}
+					}
+				},
+				Err(code) => {
+					result(Err(format!("Couldn't get client info (Error code: {})", code)))
+				}
+			}
+		});
+
+		ret
+	}
+
+	pub fn get_client_info(&self, clid: uint) -> HashMap<String, String> {
+		let mut ret = HashMap::new();
+
+		self.send(format!("clientinfo clid={}", clid), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
+			match res {
+				Ok(pipe) => {
+					result(Ok(()));
+
+					for args in pipe.iter_pipe() {
+						for arg in args.iter_args() {
+							match *arg {
+								command::KeyValue(ref key, ref value) => {
+									ret.insert(key.clone(), value.clone());
+								},
+								_ => {
+
+								}
+							}
+						}
+					}
+				},
+				Err(code) => {
+					result(Err(format!("Couldn't get server info (Error code: {})", code)))
+				}
+			}
+		});
+
+		ret
 	}
 
 	pub fn channel_list(&self) -> HashMap<uint,bool> {

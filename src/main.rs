@@ -30,6 +30,7 @@ mod bot;
 
 enum ChildDispatch {
 	ChannelList(HashMap<uint,bool>),
+	ClientList(Vec<HashMap<String, String>>),
 	ServerInfo(HashMap<String,String>),
 	ChatMessage(/*channelid: */ uint, /*invokerid: */ uint, /*invokeruid: */ String, /*message: */ String)
 }
@@ -37,6 +38,7 @@ enum ChildDispatch {
 enum ParentDispatch {
 	SendChatMessage(uint, String),
 	GetChannelList,
+	GetClientList,
 	GetServerInfo,
 	Die
 }
@@ -163,6 +165,21 @@ fn supervisor(parent: &Sender<ChildDispatch>, local: &Receiver<ParentDispatch>, 
 			GetChannelList => {
 				parent.send(ChannelList(supervisor.channel_list()));
 			},
+			GetClientList => {
+				let tmpbot = supervisor.clone();
+				let tmpparent = parent.clone();
+				spawn(proc() {
+					let mut result: Vec<HashMap<String, String>> = Vec::new();
+
+					let list = tmpbot.client_list();
+
+					for clid in list.iter() {
+						result.push(tmpbot.get_client_info(*clid));
+					}
+
+					tmpparent.send(ClientList(result));
+				});
+			},
 			Die => {
 				break;
 			}
@@ -213,6 +230,7 @@ fn main() {
 			timer::sleep(5000);
 			another_our_tx.send(GetChannelList);
 			another_our_tx.send(GetServerInfo);
+			another_our_tx.send(GetClientList);
 		}
 	});
 
@@ -247,6 +265,9 @@ fn main() {
 						None => {}
 					}
 				});
+			},
+			ClientList(list) => {
+				println!("here's how many clients there are: {}", list.len());
 			},
 			ChannelList(map) => {
 				// check for new channels
