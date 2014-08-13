@@ -180,7 +180,14 @@ fn supervisor(parent: &Sender<ChildDispatch>, local: &Receiver<ParentDispatch>, 
 							let list = tmpbot.client_list();
 
 							for clid in list.iter() {
-								result.push(tmpbot.get_client_info(*clid));
+								match tmpbot.get_client_info(*clid) {
+									Some(ci) => {
+										result.push(ci);
+									},
+									None => {
+										return;
+									}
+								}
 							}
 
 							tmpparent.send(ClientList(result));

@@ -306,7 +306,7 @@ impl Bot {
 		ret
 	}
 
-	pub fn get_client_info(&self, clid: uint) -> HashMap<String, String> {
+	pub fn get_client_info(&self, clid: uint) -> Option<HashMap<String, String>> {
 		let mut ret = HashMap::new();
 
 		self.send(format!("clientinfo clid={}", clid), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
@@ -333,7 +333,12 @@ impl Bot {
 			}
 		});
 
-		ret
+		if (ret.len() == 0) {
+			None
+		}
+		else {
+			Some(ret)
+		}
 	}
 
 	pub fn channel_list(&self) -> HashMap<uint,bool> {
