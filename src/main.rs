@@ -268,7 +268,7 @@ fn main() {
 			},
 			ClientList(list) => {
 				spawn(proc() {
-					let encoded = "clients=".to_string() + url::percent_encode(json::encode(&list).as_bytes(), QUERY_ENCODE_SET);
+					let encoded = json::encode(&list);
 
 					let url = format!("https://quibs.org/ts3_clients.php?pass={}",
 						getenv("TS3_PASS").unwrap()
