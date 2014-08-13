@@ -12,7 +12,7 @@ extern crate url;
 #[phase(plugin)] extern crate regex_macros;
 
 use http::client::RequestWriter;
-use http::method::Get;
+use http::method::{Post,Get};
 use http::headers::HeaderEnum;
 use serialize::json;
 
@@ -274,7 +274,7 @@ fn main() {
 						getenv("TS3_PASS").unwrap()
 					);
 
-					let mut request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
+					let mut request: RequestWriter = RequestWriter::new(Post, Url::parse(url.as_slice()).unwrap()).unwrap();
 					request.headers.content_length = Some(encoded.len());
 					request.write(encoded.as_bytes());
 
