@@ -72,7 +72,6 @@ impl Bot {
 					}
 				});
 				
-				/*
 				let t_run_tx = run_tx.clone();
 
 				spawn(proc() {
@@ -96,7 +95,6 @@ impl Bot {
 						}
 					}
 				});
-				*/
 
 				spawn(proc() {
 					loop {
@@ -107,9 +105,7 @@ impl Bot {
 								(*myqueue).push(callback);
 
 								match writer.write(command.as_slice()) {
-									Err(e) => {
-										
-									},
+									Err(e) => {},
 									Ok(_) => {}
 								}
 							},
