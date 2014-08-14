@@ -42,6 +42,7 @@ impl Bot {
 
 				spawn(proc() {
 					error_tx.send(connection.read(notify_tx, message_tx));
+					conection.close();
 				});
 
 				let mut queue: Arc<Mutex<Vec<Sender<(Result<command::Atom, uint>, Sender<Result<(), String>>)>>>> = Arc::new(Mutex::new(Vec::new()));
