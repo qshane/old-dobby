@@ -71,7 +71,8 @@ impl Bot {
 						}
 					}
 				});
-
+				
+				/*
 				let t_run_tx = run_tx.clone();
 
 				spawn(proc() {
@@ -95,6 +96,7 @@ impl Bot {
 						}
 					}
 				});
+				*/
 
 				spawn(proc() {
 					loop {
