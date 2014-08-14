@@ -84,7 +84,7 @@ impl Bot {
 							// send a ping message of some sort
 							let (my_response_tx,my_response_rx) = channel();
 							t_run_tx.send(
-								("ping".to_string(), my_response_tx)
+								("whoami".to_string(), my_response_tx)
 							);
 							match my_response_rx.recv_opt() {
 								Ok((result, responder)) => {
