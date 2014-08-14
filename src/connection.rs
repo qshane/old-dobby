@@ -111,6 +111,7 @@ impl<'a> TS3Connection<'a> {
 																		match dispatch(Err(code), message.clone()) {
 																			Ok(_) => {},
 																			Err(e) => {
+																				println!("error: {}", line);
 																				return Err(e);
 																			}
 																		}
@@ -121,6 +122,7 @@ impl<'a> TS3Connection<'a> {
 																			match dispatch(Ok(parsed.clone()), message.clone()) {
 																				Ok(_) => {},
 																				Err(e) => {
+																					println!("error: {}", line);
 																					return Err(e);
 																				}
 																			}
@@ -128,6 +130,7 @@ impl<'a> TS3Connection<'a> {
 																			match dispatch(Ok(data_buffer.clone().unwrap()), message.clone()) {
 																				Ok(_) => {},
 																				Err(e) => {
+																					println!("error: {}", line);
 																					return Err(e);
 																				}
 																			}
