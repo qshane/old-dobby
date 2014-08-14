@@ -238,7 +238,7 @@ fn main() {
 			supervisor(&supervisor_tx, &supervisor_rx, etx);
 
 			// since the supervisor failed, wait 10 seconds and try again
-			timer::sleep(10000);
+			timer::sleep(30000);
 		}
 	});
 
@@ -247,7 +247,9 @@ fn main() {
 		loop {
 			timer::sleep(5000);
 			another_our_tx.send(GetChannelList);
+			timer::sleep(1000);
 			another_our_tx.send(GetServerInfo);
+			timer::sleep(1000);
 			another_our_tx.send(GetClientList);
 		}
 	});
