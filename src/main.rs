@@ -21,6 +21,7 @@ use std::rand::{task_rng,Rng};
 use std::sync::{Arc,Mutex};
 
 use std::io::timer;
+use std::time::Duration;
 use std::collections::HashMap;
 use bot::Bot;
 use std::os::getenv;
@@ -238,18 +239,18 @@ fn main() {
 			supervisor(&supervisor_tx, &supervisor_rx, etx);
 
 			// since the supervisor failed, wait 10 seconds and try again
-			timer::sleep(30000);
+			timer::sleep(Duration::seconds(30));
 		}
 	});
 
 	let another_our_tx = our_tx.clone();
 	spawn(proc() {
 		loop {
-			timer::sleep(5000);
+			timer::sleep(Duration::seconds(5));
 			another_our_tx.send(GetChannelList);
-			timer::sleep(1000);
+			timer::sleep(Duration::seconds(1));
 			another_our_tx.send(GetServerInfo);
-			timer::sleep(1000);
+			timer::sleep(Duration::seconds(1));
 			another_our_tx.send(GetClientList);
 		}
 	});

@@ -5,7 +5,7 @@ use connection::TS3Connection;
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
 use std::os::getenv;
-
+use std::time::Duration;
 use std::io::timer;
 
 #[deriving(Clone)]
@@ -76,7 +76,7 @@ impl Bot {
 
 				spawn(proc() {
 					loop {
-						timer::sleep(5000);
+						timer::sleep(Duration::seconds(5));
 						let lastmsg = timeoutchecker.last_msg();
 						if (lastmsg.sec < (time::get_time().sec - 10)) {
 							timeoutchecker.close();
@@ -336,6 +336,7 @@ impl Bot {
 			None
 		}
 		else {
+			ret.insert("clid".to_string(), format!("{}", clid));
 			Some(ret)
 		}
 	}
