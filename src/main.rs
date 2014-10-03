@@ -315,7 +315,7 @@ fn main() {
 								if value.as_slice() == "quibs" {
 									is_quibs = true;
 								}
-								if value.as_slice() == "sean" {
+								if value.as_slice() == "Sean" {
 									is_sean = true;
 								}
 							}
@@ -337,12 +337,12 @@ fn main() {
 
 						if is_sean && !is_actually_sean {
 							//copy_our_tx.send(KickUser(clid, "Imposter!".to_string()));
-							println!("I want to kick {} because they're impersonating Sean!", clid);
+							//println!("Kicking Sean imposter {}!", clid);
 						}
 
 						if is_quibs && !is_actually_quibs {
-							//copy_our_tx.send(KickUser(clid, "Imposter!".to_string()));
-							println!("I want to kick {} because they're impersonating quibs!", clid);
+							copy_our_tx.send(KickUser(clid, "Imposter!".to_string()));
+							println!("Kicking quibs imposter {}!", clid);
 						}
 					}
 
