@@ -340,8 +340,8 @@ fn main() {
 						}
 
 						if is_sean && !is_actually_sean {
-							//copy_our_tx.send(KickUser(clid, "Imposter!".to_string()));
-							//println!("Kicking Sean imposter {}!", clid);
+							copy_our_tx.send(KickUser(clid, "Imposter!".to_string()));
+							println!("Kicking Sean imposter {}!", clid);
 						}
 
 						if is_quibs && !is_actually_quibs {
