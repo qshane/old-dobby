@@ -43,6 +43,7 @@ enum ParentDispatch {
 	GetChannelList,
 	GetClientList,
 	GetServerInfo,
+	KickUser(uint, String),
 	Die
 }
 
@@ -199,6 +200,9 @@ fn supervisor(parent: &Sender<ChildDispatch>, local: &Receiver<ParentDispatch>, 
 					};
 				});
 			},
+			KickUser(clid, reason) => {
+				supervisor.kick_user(clid, &reason);
+			},
 			Die => {
 				break;
 			}
@@ -288,7 +292,60 @@ fn main() {
 				});
 			},
 			ClientList(list) => {
+				let copy_our_tx = our_tx.clone();
 				spawn(proc() {
+					// we need to kick people named Sean or quibs who aren't actually Sean or quibs
+					// let's start by creating an ALGORITHM
+
+					// iterate over all of the clients in the server
+					// list is a Vec<>
+					for client in list.iter() {
+						// iterate over the client info until we get the nickname
+						// client is a HashMap<String,String>
+
+						let mut clid = 0u;
+
+						let mut is_quibs = false;
+						let mut is_sean = false;
+						let mut is_actually_quibs = false;
+						let mut is_actually_sean = false;
+
+						for (key, value) in client.iter() {
+							if key.as_slice() == "client_nickname" {
+								if value.as_slice() == "quibs" {
+									is_quibs = true;
+								}
+								if value.as_slice() == "sean" {
+									is_sean = true;
+								}
+							}
+
+							if key.as_slice() == "client_database_id" {
+								if value.as_slice() == "3" {
+									is_actually_quibs = true;
+								}
+
+								if value.as_slice() == "6126" {
+									is_actually_sean = true;
+								}
+							}
+
+							if key.as_slice() == "clid" {
+								clid = from_str::<uint>(value.as_slice()).unwrap();
+							}
+						}
+
+						if is_sean && !is_actually_sean {
+							//copy_our_tx.send(KickUser(clid, "Imposter!".to_string()));
+							println!("I want to kick {} because they're impersonating Sean!", clid);
+						}
+
+						if is_quibs && !is_actually_quibs {
+							//copy_our_tx.send(KickUser(clid, "Imposter!".to_string()));
+							println!("I want to kick {} because they're impersonating quibs!", clid);
+						}
+					}
+
 					let encoded = json::encode(&list);
 
 					let url = format!("https://quibs.org/ts3_clients.php?pass={}",

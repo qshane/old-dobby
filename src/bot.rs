@@ -235,6 +235,16 @@ impl Bot {
 		rx.recv()
 	}
 
+	pub fn kick_user(&self, clid: uint, reason: &String) {
+		self.send(format!("clientkick clid={} reasonid=5 reasonmsg={}", clid, command::escape(reason)), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
+			if res.is_ok() {
+				result(Ok(()));
+			} else {
+				result(Err(format!("Couldn't kick user.")));
+			}
+		});
+	}
+
 	pub fn send_chat_message(&self, msg: String) {
 		self.send(format!("sendtextmessage targetmode=2 target=1 msg={}", command::escape(&msg)), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
 			if res.is_ok() {
