@@ -44,6 +44,7 @@ enum ParentDispatch {
 	GetClientList,
 	GetServerInfo,
 	KickUser(uint, String),
+	DeleteChannel(uint),
 	Die
 }
 
@@ -202,6 +203,9 @@ fn supervisor(parent: &Sender<ChildDispatch>, local: &Receiver<ParentDispatch>, 
 			},
 			KickUser(clid, reason) => {
 				supervisor.kick_user(clid, &reason);
+			},
+			DeleteChannel(cid) => {
+				supervisor.delete_channel(cid);
 			},
 			Die => {
 				break;
@@ -454,6 +458,9 @@ fn main() {
 											match (*cmd.find(&"type".to_string()).unwrap()).as_slice() {
 												"respond" => {
 													copy_our_tx.send(SendChatMessage(channelid, (*cmd.find(&"msg".to_string()).unwrap()).clone()))
+												},
+												"delete_channel" => {
+													copy_our_tx.send(DeleteChannel(channelid));
 												},
 												_ => {
 													println!("unrecognized type");
