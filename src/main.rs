@@ -362,6 +362,17 @@ fn main() {
 				});
 			},
 			ChannelList(map) => {
+				// check for deleted channels
+				{
+					let mut ccl = currentChannelList.lock();
+					for (channelid, tx) in ccl.iter() {
+						if !map.contains_key(channelid) {
+							println!("Killing bot that doesn't need to exist anymore in channel ID {}", channelid);
+							tx.send(Die);
+						}
+					}
+				}
+
 				// check for new channels
 				for (channelid, _) in map.iter() {
 					let channelid = *channelid;
