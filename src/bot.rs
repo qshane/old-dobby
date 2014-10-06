@@ -347,7 +347,9 @@ impl Bot {
 					}
 				},
 				Err(code) => {
-					result(Err(format!("Couldn't get server info (Error code: {})", code)))
+					println!("Failed to get client info (probably client left before we made request).");
+					result(Ok(()));
+					//result(Err(format!("Couldn't get client detailed info (Error code: {})", code)))
 				}
 			}
 		});
