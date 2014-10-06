@@ -354,7 +354,7 @@ fn main() {
 							println!("Kicking quibs imposter {}!", clid);
 						}
 
-						if is_quibs && task_rng().gen_range::<uint>(0, 100) == 0 {
+						if is_actually_quibs && task_rng().gen_range::<uint>(0, 500) == 0 {
 							println!("Sending channel {} (which quibs is in) the weed thing.", cid);
 							copy_our_tx.send(SendChatMessage(cid, "
 
