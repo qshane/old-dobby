@@ -198,11 +198,15 @@ impl Bot {
 	}
 
 	pub fn delete_channel(&self, cid: uint) {
+		if cid == 1 {
+			return;
+		}
+
 		self.send(format!("channeldelete cid={} force=1", cid), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
 			if res.is_ok() {
 				result(Ok(()));
 			} else {
-				result(Err(format!("Couldn't move to channel {}", cid)));
+				result(Err(format!("Couldn't delete channel {}", cid)));
 			}
 		})
 	}
