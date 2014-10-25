@@ -521,7 +521,6 @@ fn main() {
 													match (*cmd.find(&"type".to_string()).unwrap()).as_slice() {
 														"respond" => {
 															copy_our_tx.send(SendChatMessage(channelid, (*cmd.find(&"msg".to_string()).unwrap()).clone()));
-															copy_our_tx.send(SendChatMessage(channelid, format!("{}", messagesInLastTime)));
 														},
 														"delete_channel" => {
 															copy_our_tx.send(DeleteChannel(channelid));
