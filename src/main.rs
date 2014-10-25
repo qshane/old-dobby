@@ -5,6 +5,7 @@
 #![feature(phase)]
 #![feature(tuple_indexing)]
 
+extern crate time;
 extern crate http;
 extern crate serialize;
 extern crate regex;
@@ -22,7 +23,7 @@ use std::sync::{Arc,Mutex};
 
 use std::io::timer;
 use std::time::Duration;
-use std::collections::HashMap;
+use std::collections::{RingBuf,Deque,HashMap};
 use bot::Bot;
 use std::os::getenv;
 use url::{Url,QUERY_ENCODE_SET};
@@ -220,6 +221,8 @@ fn main() {
 
 	let d_our_tx = our_tx.clone();
 	let c_watcher_tx = supervisor_tx.clone();
+
+	let mut lastQueryMap: HashMap<String, RingBuf<time::Timespec>> = HashMap::new();
 
 	let server_uptime = Arc::new(Mutex::new(0u));
 
@@ -448,7 +451,37 @@ fn main() {
 				}
 			},
 			ChatMessage(channelid, invokerid, invokeruid, message) => {
-				if (invokeruid.as_slice() != "serveradmin") {
+				if match lastQueryMap.find_mut(&invokeruid) {
+					Some(lastmessages) => {
+						if lastmessages.len() == 10 {
+							lastmessages.pop_front();
+						}
+						lastmessages.push(time::get_time());
+						false
+					},
+					None => {
+						true
+					}
+				} {
+						let mut b = RingBuf::with_capacity(10);
+						b.push(time::get_time());
+						lastQueryMap.insert(invokeruid.clone(), b);
+				}
+
+				let tenSecondsAgo = &(time::get_time() + Duration::seconds(10).neg());
+				let mut messagesInLastTime = 0u;
+				match lastQueryMap.find(&invokeruid) {
+					Some(lastmessages) => {
+						for event in lastmessages.iter() {
+							if event > tenSecondsAgo {
+								messagesInLastTime += 1;
+							}
+						}
+					},
+					None => {fail!("This should not ever happen! error 1487845");}
+				}
+
+				if (messagesInLastTime < 9 && invokeruid.as_slice() != "serveradmin") {
 					println!("Received chat message on channel {} from {}: {}", channelid, invokerid, message);
 
 					let re = regex!(r"^\.img (.+)$");
@@ -487,7 +520,8 @@ fn main() {
 												for cmd in res.commands.iter() {
 													match (*cmd.find(&"type".to_string()).unwrap()).as_slice() {
 														"respond" => {
-															copy_our_tx.send(SendChatMessage(channelid, (*cmd.find(&"msg".to_string()).unwrap()).clone()))
+															copy_our_tx.send(SendChatMessage(channelid, (*cmd.find(&"msg".to_string()).unwrap()).clone()));
+															copy_our_tx.send(SendChatMessage(channelid, (*cmd.find(&format!("{}", messagesInLastTime)).unwrap()).clone()));
 														},
 														"delete_channel" => {
 															copy_our_tx.send(DeleteChannel(channelid));
