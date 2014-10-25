@@ -3,8 +3,8 @@
 */
 
 #![feature(phase)]
+#![feature(tuple_indexing)]
 
-extern crate debug;
 extern crate http;
 extern crate serialize;
 extern crate regex;
@@ -32,7 +32,7 @@ mod command;
 mod bot;
 
 enum ChildDispatch {
-	ChannelList(HashMap<uint,bool>),
+	ChannelList(HashMap<uint,String>),
 	ClientList(Vec<HashMap<String, String>>),
 	ServerInfo(HashMap<String,String>),
 	ChatMessage(/*channelid: */ uint, /*invokerid: */ uint, /*invokeruid: */ String, /*message: */ String)
@@ -263,7 +263,7 @@ fn main() {
 		}
 	});
 
-	let mut currentChannelList: Arc<Mutex<HashMap<uint, (Sender<ParentDispatch>)>>> = Arc::new(Mutex::new(HashMap::new()));
+	let mut currentChannelList: Arc<Mutex<HashMap<uint, (Sender<ParentDispatch>, String)>>> = Arc::new(Mutex::new(HashMap::new()));
 
 	loop {
 		let event = our_rx.recv();
@@ -387,7 +387,7 @@ fn main() {
 				// check for deleted channels
 				{
 					let mut ccl = currentChannelList.lock();
-					for (channelid, tx) in ccl.iter() {
+					for (channelid, &(ref tx, _)) in ccl.iter() {
 						if !map.contains_key(channelid) {
 							println!("Killing bot that doesn't need to exist anymore in channel ID {}", channelid);
 							tx.send(Die);
@@ -396,7 +396,7 @@ fn main() {
 				}
 
 				// check for new channels
-				for (channelid, _) in map.iter() {
+				for (channelid, channelname) in map.iter() {
 					let channelid = *channelid;
 					//if channelid == 77 {
 						let no_contains = {
@@ -442,7 +442,7 @@ fn main() {
 							});
 
 							let mut ccl = currentChannelList.lock();
-							ccl.insert(channelid, (w_our_tx));
+							ccl.insert(channelid, (w_our_tx, channelname.clone()));
 						}
 					//}
 				}
@@ -455,47 +455,64 @@ fn main() {
 
 					let copy_our_tx = our_tx.clone();
 
-					spawn(proc() {
-						let url = format!("https://quibs.org/ts3_chat.php?pass={}&cid={}&invokerid={}&invokeruid={}&msg={}", 
-							getenv("TS3_PASS").unwrap(),
-							url::percent_encode(format!("{}", channelid).as_bytes(), QUERY_ENCODE_SET),
-							url::percent_encode(format!("{}", invokerid).as_bytes(), QUERY_ENCODE_SET),
-							url::percent_encode(command::unescape(&invokeruid).as_bytes(), QUERY_ENCODE_SET),
-							url::percent_encode(command::unescape(&message).as_bytes(), QUERY_ENCODE_SET)
-						);
+					let mut cname: Option<String> = None;
 
-						let request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
+					match currentChannelList.lock().find(&channelid) {
+						Some(&(_, ref n)) => {
+							cname = Some(n.clone());
+						},
+						None => {}
+					}
 
-						match request.read_response() {
-							Ok(mut response) => {
-								let body = String::from_utf8(response.read_to_end().unwrap()).unwrap();
+					match cname {
+						Some(cname) => {
+							spawn(proc() {
+								let url = format!("https://quibs.org/ts3_chat.php?pass={}&cid={}&invokerid={}&invokeruid={}&cname={}&msg={}", 
+									getenv("TS3_PASS").unwrap(),
+									url::percent_encode(format!("{}", channelid).as_bytes(), QUERY_ENCODE_SET),
+									url::percent_encode(format!("{}", invokerid).as_bytes(), QUERY_ENCODE_SET),
+									url::percent_encode(command::unescape(&invokeruid).as_bytes(), QUERY_ENCODE_SET),
+									url::percent_encode(command::unescape(&cname).as_bytes(), QUERY_ENCODE_SET),
+									url::percent_encode(command::unescape(&message).as_bytes(), QUERY_ENCODE_SET)
+								);
 
-								match json::decode::<OperationList>(body.as_slice()) {
-									Ok(ref res) => {
-										for cmd in res.commands.iter() {
-											match (*cmd.find(&"type".to_string()).unwrap()).as_slice() {
-												"respond" => {
-													copy_our_tx.send(SendChatMessage(channelid, (*cmd.find(&"msg".to_string()).unwrap()).clone()))
-												},
-												"delete_channel" => {
-													copy_our_tx.send(DeleteChannel(channelid));
-												},
-												_ => {
-													println!("unrecognized type");
+								let request: RequestWriter = RequestWriter::new(Get, Url::parse(url.as_slice()).unwrap()).unwrap();
+
+								match request.read_response() {
+									Ok(mut response) => {
+										let body = String::from_utf8(response.read_to_end().unwrap()).unwrap();
+
+										match json::decode::<OperationList>(body.as_slice()) {
+											Ok(ref res) => {
+												for cmd in res.commands.iter() {
+													match (*cmd.find(&"type".to_string()).unwrap()).as_slice() {
+														"respond" => {
+															copy_our_tx.send(SendChatMessage(channelid, (*cmd.find(&"msg".to_string()).unwrap()).clone()))
+														},
+														"delete_channel" => {
+															copy_our_tx.send(DeleteChannel(channelid));
+														},
+														_ => {
+															println!("unrecognized type");
+														}
+													}
 												}
+											},
+											Err(_) => {
+												println!("couldn't parse output");
 											}
 										}
 									},
 									Err(_) => {
-										println!("couldn't parse output");
+										println!("couldn't fetch response");
 									}
 								}
-							},
-							Err(_) => {
-								println!("couldn't fetch response");
-							}
+							});
+						},
+						None => {
+							println!("Weird! We don't have channel information {}", channelid);
 						}
-					});
+					}
 				}
 			}
 		}

@@ -75,13 +75,13 @@ pub enum Atom {
 
 pub fn combine(init: Atom, second: Vec<Atom>) -> Vec<Atom> {
 	let mut tmp = vec!(init);
-	tmp.push_all_move(second);
+	tmp.push_all(second.as_slice());
 	tmp
 }
 
 pub fn combine_boxed(init: Box<Atom>, second: Vec<Box<Atom>>) -> Vec<Box<Atom>> {
 	let mut tmp = vec!(init);
-	tmp.push_all_move(second);
+	tmp.push_all(second.as_slice());
 	tmp
 }
 

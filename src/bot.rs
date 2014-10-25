@@ -56,7 +56,7 @@ impl Bot {
 							Ok((message, callback_result)) => {
 								let mut myqueue = queue1.lock();
 
-								match (*myqueue).shift() {
+								match (*myqueue).remove(0) {
 									Some(callback) => {
 										callback.send((message, callback_result));
 									},
@@ -367,7 +367,7 @@ impl Bot {
 		}
 	}
 
-	pub fn channel_list(&self) -> HashMap<uint,bool> {
+	pub fn channel_list(&self) -> HashMap<uint,String> {
 		let mut ret = HashMap::new();
 
 		self.send("channellist".to_string(), |res: Result<command::Atom, uint>, this: &Bot, result: |Result<(), String>|| {
@@ -375,17 +375,26 @@ impl Bot {
 				Ok(pipe) => {
 					result(Ok(()));
 					for args in pipe.iter_pipe() {
+						let mut clid: Option<uint> = None;
+						let mut name: Option<String> = None;
+
 						for arg in args.iter_args() {
 							match *arg {
 								command::KeyValue(ref key, ref value) => {
 									if key.as_slice() == "cid" {
-										ret.insert(from_str::<uint>(value.as_slice()).unwrap(), true);
+										clid = Some(from_str::<uint>(value.as_slice()).unwrap());
+									} else if key.as_slice() == "channel_name" {
+										name = Some(value.clone());
 									}
 								},
 								_ => {
 
 								}
 							}
+						}
+
+						if clid.is_some() && name.is_some() {
+							ret.insert(clid.unwrap(), name.unwrap());
 						}
 					}
 				},
