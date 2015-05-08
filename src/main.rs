@@ -356,7 +356,7 @@ fn main() {
 							copy_our_tx.send(KickUser(clid, "Imposter!".to_string()));
 							println!("Kicking quibs imposter {}!", clid);
 						}
-
+/*
 						if is_actually_quibs && task_rng().gen_range::<uint>(0, 50000) == 0 {
 							println!("Sending channel {} (which quibs is in) the weed thing.", cid);
 							copy_our_tx.send(SendChatMessage(cid, "
@@ -369,6 +369,7 @@ fn main() {
 ─╚╬╦╬╩╬╦╬╝──╠╬╬╦╦╦╦╗─╠╬╬╦╦╦╦╗─╠╬╬╦╦╬╬╝
 ──╚╩╝─╚╩╝───╚╩╩╩╩╩╩╝─╚╩╩╩╩╩╩╝─╚╩╩╩╩╩╝".to_string()));
 						}
+*/
 					}
 
 					let encoded = json::encode(&list);
